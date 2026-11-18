@@ -79,17 +79,20 @@ module lcd_formatter (
             f        = {32{CH_SP}};              // tudo em branco
             is_clear = (!idle) && (op == OP_CLEAR);
 
-            // Linha 1, esquerda: nome da operacao (caracteres 0..3)
             if (!idle) begin
                 nm = name_rom(op);
                 f[255-8*0 -: 8] = nm[31:24];
                 f[255-8*1 -: 8] = nm[23:16];
                 f[255-8*2 -: 8] = nm[15:8];
                 f[255-8*3 -: 8] = nm[7:0];
+            end else begin
+                f[255-8*0 -: 8] = CH_MINUS;
+                f[255-8*1 -: 8] = CH_MINUS;
+                f[255-8*2 -: 8] = CH_MINUS;
+                f[255-8*3 -: 8] = CH_MINUS;
             end
 
             if (!is_clear) begin
-                // Linha 1, direita: "[dddd]" (caracteres 10..15)
                 f[255-8*10 -: 8] = CH_LB;
                 f[255-8*15 -: 8] = CH_RB;
                 if (!idle) begin
@@ -97,9 +100,13 @@ module lcd_formatter (
                     f[255-8*12 -: 8] = {7'b0011000, dest[2]};
                     f[255-8*13 -: 8] = {7'b0011000, dest[1]};
                     f[255-8*14 -: 8] = {7'b0011000, dest[0]};
+                end else begin
+                    f[255-8*11 -: 8] = CH_MINUS;
+                    f[255-8*12 -: 8] = CH_MINUS;
+                    f[255-8*13 -: 8] = CH_MINUS;
+                    f[255-8*14 -: 8] = CH_MINUS;
                 end
 
-                // Linha 2, direita: sinal + 5 digitos (caracteres 26..31)
                 f[255-8*26 -: 8] = neg ? CH_MINUS : CH_PLUS;
                 f[255-8*27 -: 8] = {4'h3, bcd[19:16]};  // 8'h30 + digito
                 f[255-8*28 -: 8] = {4'h3, bcd[15:12]};
@@ -112,7 +119,6 @@ module lcd_formatter (
         end
     endfunction
 
-    // ---------------------------------------------------------------- Registradores
     reg [1:0]  state;
     reg [2:0]  op_q;       // opcode travado
     reg [3:0]  dest_q;     // destino travado
