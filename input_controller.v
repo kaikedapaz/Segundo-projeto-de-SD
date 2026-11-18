@@ -12,10 +12,6 @@ module input_controller #(
     output wire mem_reset_base   // 1 quando desligado ou reiniciando (zera os 16 registradores)
 );
 
-    // =========================================================================
-    // 1. SINCRONIZADORES DE 2 ESTÁGIOS (Evita falhas elétricas/metaestabilidade)
-    // =========================================================================
-    // Inicializados em 1 porque os botões KEY da DE2-115 ficam em '1' quando soltos
     reg key0_meta = 1'b1, key0_in = 1'b1;
     reg key1_meta = 1'b1, key1_in = 1'b1;
 
@@ -27,9 +23,6 @@ module input_controller #(
         key1_in   <= key1_meta;
     end
 
-    // =========================================================================
-    // 2. FILTRO DE DEBOUNCE (~20 ms)
-    // =========================================================================
     reg [19:0] cnt0 = 20'd0;
     reg [19:0] cnt1 = 20'd0;
     reg key0_stable = 1'b1, key0_prev = 1'b1;
@@ -63,9 +56,6 @@ module input_controller #(
         key1_prev <= key1_stable;
     end
 
-    // =========================================================================
-    // 3. DETECÇÃO DE SOLTURA (Borda de subida 0 -> 1) E ESTADO GLOBAL
-    // =========================================================================
     wire ligar_released  = (~key0_prev) & key0_stable;
     wire enviar_released = (~key1_prev) & key1_stable;
 
@@ -80,9 +70,6 @@ module input_controller #(
         end
     end
 
-    // =========================================================================
-    // 4. SAÍDAS DE CONTROLE PARA A CPU, MEMÓRIA E LCD
-    // =========================================================================
     // Bloqueia o envio se o sistema estiver desligado ou desligando neste ciclo
     assign send_pulse      = system_on && (!ligar_released) && enviar_released;
 
