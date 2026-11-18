@@ -1,0 +1,2 @@
+v1
+DSP_BALANCING_IMPLEMENTATION,DSP_BLOCKS,module_mini_cpu:u_cpu|ula:u_ula|lpm_mult:Mult0|mult_36t:auto_generated|mac_out2,

@@ -35,18 +35,8 @@ module top_level (
     always @(posedge CLOCK_50)
         if (!por_n) por_cnt <= por_cnt + 4'd1;
 
-    // ---------------------------------------------------------------- Fios entre modulos
+   // ---------------------------------------------------------------- Fios entre modulos
     wire        system_on;
-    wire        send_pulse;
-
-    wire [2:0]  opcode;
-    wire [3:0]  reg_dest;
-    wire [3:0]  reg_src1;
-    wire [3:0]  reg_src2;
-    wire [15:0] imm_16bits;
-    wire        use_imm;        // <<< CONFIRMAR nome com o Integrante 2
-    wire        is_special;     // <<< CONFIRMAR nome com o Integrante 2
-
     wire [2:0]  op_realizada;
     wire [3:0]  reg_dest_out;
     wire [15:0] resultado_16bits;
@@ -55,51 +45,23 @@ module top_level (
     wire [255:0] lcd_frame;
     wire         frame_ready;
     wire         fmt_busy;
+    
+    // (APAGADAS as instâncias u_input e u_decoder, pois já existem dentro de u_cpu)
 
-    // ---------------------------------------------------------------- Integrante 1
-    input_controller u_input (                 // <<< CONFIRMAR portas
-        .clk        (CLOCK_50),
-        .rst_n      (por_n),
-        .btn_ligar  (KEY[1]),                  // entrada crua, ativa em baixo
-        .btn_enviar (KEY[0]),                  // entrada crua, ativa em baixo
-        .system_on  (system_on),
-        .send_pulse (send_pulse)
-    );
-
-    // ---------------------------------------------------------------- Integrante 2
-    instruction_decoder u_decoder (            // <<< CONFIRMAR portas
-        .clk        (CLOCK_50),
-        .sw         (SW),
-        .send_pulse (send_pulse),
-        .opcode     (opcode),
-        .reg_dest   (reg_dest),
-        .reg_src1   (reg_src1),
-        .reg_src2   (reg_src2),
-        .imm_16bits (imm_16bits),
-        .use_imm    (use_imm),
-        .is_special (is_special)
-    );
-
-    // ---------------------------------------------------------------- Integrante 3
-    // module_mini_cpu instancia memory e module_alu internamente.
-    // Os 16 registradores sao zerados quando system_on = 0 (rst_n = system_on).
-    module_mini_cpu u_cpu (                    // <<< CONFIRMAR portas
-        .clk              (CLOCK_50),
-        .rst_n            (system_on),
-        .send_pulse       (send_pulse),
-        .opcode           (opcode),
-        .reg_dest         (reg_dest),
-        .reg_src1         (reg_src1),
-        .reg_src2         (reg_src2),
-        .imm_16bits       (imm_16bits),
-        .use_imm          (use_imm),
-        .is_special       (is_special),
+    // ---------------------------------------------------------------- Integrantes 1, 2 e 3
+    // module_mini_cpu já instancia input, decoder, memoria e ula internamente.
+    module_mini_cpu u_cpu (
+        .CLOCK_50         (CLOCK_50),
+        .SW               (SW),
+        .KEY              ({2'b11, KEY}), // Preenche os 2 bits faltantes com 1 (solto)
+        .system_on        (system_on),
+        .power_on_pulse   (),             // Deixado vazio, não é usado no top_level
+        .power_off_pulse  (),             // Deixado vazio, não é usado no top_level
         .op_realizada     (op_realizada),
         .reg_dest_out     (reg_dest_out),
         .resultado_16bits (resultado_16bits),
         .start_lcd        (start_lcd)
     );
-
     // ---------------------------------------------------------------- Integrante 4
     // rst_n = system_on: desligado, o quadro volta ao estado inicial.
     lcd_formatter u_formatter (
@@ -130,11 +92,7 @@ module top_level (
     );
 
     // ---------------------------------------------------------------- LEDs de depuracao
-    reg send_led = 1'b0;
-    always @(posedge CLOCK_50)
-        if (send_pulse) send_led <= ~send_led;
-
     assign LEDG[0] = system_on;
-    assign LEDG[1] = send_led;
+    assign LEDG[1] = 1'b0; // O LED de send_pulse foi desativado pois o sinal é interno à CPU
 
 endmodule

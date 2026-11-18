@@ -1,0 +1,30 @@
+
+State Machine - |top_level|lcd_controller:u_lcd|st
+Name st.ST_OFF st.ST_WRITE st.ST_ON st.ST_INIT st.ST_SHUT 
+st.ST_SHUT 0 0 0 0 0 
+st.ST_INIT 0 0 0 1 1 
+st.ST_ON 0 0 1 0 1 
+st.ST_WRITE 0 1 0 0 1 
+st.ST_OFF 1 0 0 0 1 
+
+State Machine - |top_level|lcd_controller:u_lcd|es
+Name es.E_HOLD es.E_HIGH es.E_SETUP es.E_IDLE es.E_WAIT 
+es.E_IDLE 0 0 0 0 0 
+es.E_SETUP 0 0 1 1 0 
+es.E_HIGH 0 1 0 1 0 
+es.E_HOLD 1 0 0 1 0 
+es.E_WAIT 0 0 0 1 1 
+
+State Machine - |top_level|lcd_formatter:u_formatter|state
+Name state.S_IDLE state.S_DONE state.S_CONV 
+state.S_IDLE 0 0 0 
+state.S_CONV 1 0 1 
+state.S_DONE 1 1 0 
+
+State Machine - |top_level|module_mini_cpu:u_cpu|state
+Name state.S_WRITEBACK state.S_EXECUTE state.S_READ state.S_IDLE state.S_UPDATE_LCD 
+state.S_IDLE 0 0 0 0 0 
+state.S_READ 0 0 1 1 0 
+state.S_EXECUTE 0 1 0 1 0 
+state.S_WRITEBACK 1 0 0 1 0 
+state.S_UPDATE_LCD 0 0 0 1 1 
