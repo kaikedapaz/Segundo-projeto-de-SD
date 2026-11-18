@@ -1,18 +1,4 @@
-// =============================================================================
-// top_level.v  -  Integrante 5: integracao de todos os modulos na DE2-115
-//
-// Fluxo:  KEY/SW -> input_controller -> instruction_decoder -> module_mini_cpu
-//         -> lcd_formatter -> lcd_controller -> LCD
-//
-// ATENCAO: os modulos dos Integrantes 1, 2 e 3 ainda nao foram vistos. Os NOMES DE
-// PORTA abaixo seguem a divisao de tarefas (system_on, send_pulse, opcode, reg_dest,
-// reg_src1, reg_src2, imm_16bits, op_realizada, reg_dest_out, resultado_16bits,
-// start_lcd), mas os demais nomes (clk, rst_n, btn_*, sw, use_imm, is_special) sao
-// SUPOSICOES. Ajuste as ligacoes marcadas com "<<< CONFIRMAR" ao contrato real.
-//
-// Botoes da DE2-115 sao ativos em baixo (apertado = 0). Mapeamento assumido:
-//   KEY[1] = Botao Ligar,  KEY[0] = Botao Enviar  (trocar abaixo se o grupo preferir)
-// =============================================================================
+
 module top_level (
     input  wire        CLOCK_50,
     input  wire [1:0]  KEY,          // KEY[1] = Ligar, KEY[0] = Enviar (ativos em baixo)
@@ -48,7 +34,6 @@ module top_level (
     
     // (APAGADAS as instâncias u_input e u_decoder, pois já existem dentro de u_cpu)
 
-    // ---------------------------------------------------------------- Integrantes 1, 2 e 3
     // module_mini_cpu já instancia input, decoder, memoria e ula internamente.
     module_mini_cpu u_cpu (
         .CLOCK_50         (CLOCK_50),
@@ -62,7 +47,6 @@ module top_level (
         .resultado_16bits (resultado_16bits),
         .start_lcd        (start_lcd)
     );
-    // ---------------------------------------------------------------- Integrante 4
     // rst_n = system_on: desligado, o quadro volta ao estado inicial.
     lcd_formatter u_formatter (
         .clk              (CLOCK_50),
@@ -76,7 +60,6 @@ module top_level (
         .busy             (fmt_busy)
     );
 
-    // ---------------------------------------------------------------- Integrante 5
     lcd_controller #(.CYC_US(50)) u_lcd (
         .clk         (CLOCK_50),
         .rst_n       (por_n),
