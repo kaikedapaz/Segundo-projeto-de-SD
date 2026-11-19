@@ -1,16 +1,15 @@
 module lcd_formatter (
-    input  wire         clk,               // clock de 50 MHz
-    input  wire         rst_n,             // ativo em baixo (ligar a system_on)
-    input  wire         start_lcd,         // pulso: ha resultado novo
-    input  wire [2:0]   op_realizada,      // opcode da instrucao executada
-    input  wire [3:0]   reg_dest_out,      // registrador de destino (ou o consultado, no DISPLAY)
-    input  wire [15:0]  resultado_16bits,  // resultado em complemento de 2
-    output reg  [255:0] lcd_frame,         // 32 caracteres ASCII prontos
-    output reg          frame_ready,       // pulso de 1 ciclo: lcd_frame novo
-    output wire         busy               // 1 enquanto converte
+    input  wire         clk,
+    input  wire         rst_n,
+    input  wire         start_lcd,
+    input  wire [2:0]   op_realizada,
+    input  wire [3:0]   reg_dest_out,
+    input  wire [15:0]  resultado_16bits,
+    output reg  [255:0] lcd_frame,
+    output reg          frame_ready,
+    output wire         busy
 );
 
-    // ---------------------------------------------------------------- Constantes
     localparam [2:0] OP_LOAD    = 3'b000;
     localparam [2:0] OP_ADD     = 3'b001;
     localparam [2:0] OP_ADDI    = 3'b010;
@@ -20,19 +19,16 @@ module lcd_formatter (
     localparam [2:0] OP_CLEAR   = 3'b110;
     localparam [2:0] OP_DISPLAY = 3'b111;
 
-    localparam [7:0] CH_SP    = 8'h20;  // ' '
-    localparam [7:0] CH_PLUS  = 8'h2B;  // '+'
-    localparam [7:0] CH_MINUS = 8'h2D;  // '-'
-    localparam [7:0] CH_LB    = 8'h5B;  // '['
-    localparam [7:0] CH_RB    = 8'h5D;  // ']'
+    localparam [7:0] CH_SP    = 8'h20;
+    localparam [7:0] CH_PLUS  = 8'h2B;
+    localparam [7:0] CH_MINUS = 8'h2D;
+    localparam [7:0] CH_LB    = 8'h5B;
+    localparam [7:0] CH_RB    = 8'h5D;
 
     localparam [1:0] S_IDLE = 2'd0;
     localparam [1:0] S_CONV = 2'd1;
     localparam [1:0] S_DONE = 2'd2;
 
-    // ---------------------------------------------------------------- Funcoes
-
-    // Tabela de nomes (4 caracteres, o primeiro no byte mais significativo).
     function [31:0] name_rom;
         input [2:0] op;
         begin
@@ -50,7 +46,6 @@ module lcd_formatter (
         end
     endfunction
 
-    // Passo "soma 3" do Double Dabble: cada digito BCD >= 5 recebe +3.
     function [19:0] dd_adjust;
         input [19:0] b;
         reg   [19:0] r;
@@ -64,19 +59,17 @@ module lcd_formatter (
         end
     endfunction
 
-    // Monta o quadro completo de 32 caracteres.
-    //   idle = 1 -> quadro inicial (tela recem-ligada)
     function [255:0] build_frame;
         input        idle;
         input [2:0]  op;
         input [3:0]  dest;
-        input        neg;     // 1 = resultado negativo
-        input [19:0] bcd;     // 5 digitos BCD do modulo
+        input        neg;
+        input [19:0] bcd;
         reg   [255:0] f;
         reg   [31:0]  nm;
         reg           is_clear;
         begin
-            f        = {32{CH_SP}};              // tudo em branco
+            f        = {32{CH_SP}};
             is_clear = (!idle) && (op == OP_CLEAR);
 
             if (!idle) begin
@@ -96,7 +89,7 @@ module lcd_formatter (
                 f[255-8*10 -: 8] = CH_LB;
                 f[255-8*15 -: 8] = CH_RB;
                 if (!idle) begin
-                    f[255-8*11 -: 8] = {7'b0011000, dest[3]};  // '0' ou '1'
+                    f[255-8*11 -: 8] = {7'b0011000, dest[3]};
                     f[255-8*12 -: 8] = {7'b0011000, dest[2]};
                     f[255-8*13 -: 8] = {7'b0011000, dest[1]};
                     f[255-8*14 -: 8] = {7'b0011000, dest[0]};
@@ -108,7 +101,7 @@ module lcd_formatter (
                 end
 
                 f[255-8*26 -: 8] = neg ? CH_MINUS : CH_PLUS;
-                f[255-8*27 -: 8] = {4'h3, bcd[19:16]};  // 8'h30 + digito
+                f[255-8*27 -: 8] = {4'h3, bcd[19:16]};
                 f[255-8*28 -: 8] = {4'h3, bcd[15:12]};
                 f[255-8*29 -: 8] = {4'h3, bcd[11:8]};
                 f[255-8*30 -: 8] = {4'h3, bcd[7:4]};
@@ -120,21 +113,19 @@ module lcd_formatter (
     endfunction
 
     reg [1:0]  state;
-    reg [2:0]  op_q;       // opcode travado
-    reg [3:0]  dest_q;     // destino travado
-    reg        neg_q;      // sinal travado
-    reg [15:0] shreg;      // modulo ainda nao consumido pelo Double Dabble
-    reg [19:0] bcd;        // 5 digitos BCD em construcao
-    reg [4:0]  cnt;        // contador de deslocamentos (0..15)
-    reg        start_q;    // para detectar a borda de subida de start_lcd
+    reg [2:0]  op_q;
+    reg [3:0]  dest_q;
+    reg        neg_q;
+    reg [15:0] shreg;
+    reg [19:0] bcd;
+    reg [4:0]  cnt;
+    reg        start_q;
 
     wire start_edge = start_lcd & ~start_q;
     assign busy = (state != S_IDLE);
 
-    // Passo seguinte do Double Dabble (combinacional)
     wire [19:0] bcd_adj = dd_adjust(bcd);
 
-    // ---------------------------------------------------------------- Controle
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state       <= S_IDLE;
@@ -149,17 +140,14 @@ module lcd_formatter (
             lcd_frame   <= build_frame(1'b1, 3'd0, 4'd0, 1'b0, 20'd0);
         end else begin
             start_q     <= start_lcd;
-            frame_ready <= 1'b0;                    // pulso de 1 ciclo
+            frame_ready <= 1'b0;
 
             case (state)
-                // Espera um pulso de start_lcd e trava os dados da CPU.
                 S_IDLE: begin
                     if (start_edge) begin
                         op_q   <= op_realizada;
                         dest_q <= reg_dest_out;
                         neg_q  <= resultado_16bits[15];
-                        // Modulo: se negativo, inverte e soma 1 (complemento de 2).
-                        // -32768 (16'h8000) continua 16'h8000 = 32768 sem sinal: correto.
                         shreg  <= resultado_16bits[15] ? (~resultado_16bits + 16'd1)
                                                        : resultado_16bits;
                         bcd    <= 20'd0;
@@ -168,7 +156,6 @@ module lcd_formatter (
                     end
                 end
 
-                // 16 iteracoes: soma 3 nos digitos >= 5 e desloca 1 bit.
                 S_CONV: begin
                     {bcd, shreg} <= {bcd_adj, shreg} << 1;
                     cnt          <= cnt + 5'd1;
@@ -176,7 +163,6 @@ module lcd_formatter (
                         state <= S_DONE;
                 end
 
-                // Publica o quadro e avisa o lcd_controller.
                 S_DONE: begin
                     lcd_frame   <= build_frame(1'b0, op_q, dest_q, neg_q, bcd);
                     frame_ready <= 1'b1;
