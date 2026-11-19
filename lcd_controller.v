@@ -1,29 +1,3 @@
-// =============================================================================
-// lcd_controller.v  -  Integrante 5: driver fisico do LCD 16x2 (HD44780) da DE2-115
-//
-// O que faz:
-//   * Sistema LIGA (system_on 0 -> 1): espera, executa a rotina de inicializacao
-//     (modo 8 bits / 2 linhas, display off, limpar, modo de entrada, display on)
-//     e escreve o quadro atual de lcd_frame (a tela "ociosa" do formatador).
-//   * frame_ready = 1 (pulso) com o sistema ligado: escreve os 32 caracteres
-//     (linha 1 a partir de DDRAM 0x00, linha 2 a partir de 0x40).
-//   * Sistema DESLIGA (system_on 1 -> 0): limpa e apaga o display.
-//   * Apos o reset (rst_n), limpa e apaga o display uma vez, para a tela comecar
-//     vazia mesmo que o LCD guarde texto de um programa anterior.
-//
-// Temporizacao (clock de 50 MHz, CYC_US = 50 ciclos por microssegundo):
-//   * RS/DATA estaveis 100 ns antes do EN subir.
-//   * EN em nivel alto por 500 ns; o LCD captura na descida (1 -> 0).
-//   * RS/DATA mantidos por 100 ns depois da descida.
-//   * Espera apos cada comando/caractere: 1 ms (como recomenda a especificacao);
-//     2 ms apos "limpar display" (o datasheet pede >= 1,52 ms).
-//
-// Formato de lcd_frame (o mesmo do lcd_formatter):
-//   caractere k (0..31) = lcd_frame[255-8*k -: 8]; 0..15 = linha 1, 16..31 = linha 2.
-//
-// Se frame_ready chegar enquanto uma escrita esta em andamento, o quadro mais novo
-// e guardado e escrito logo depois (nunca sai uma tela misturada).
-// =============================================================================
 module lcd_controller #(
     parameter CYC_US = 50          // ciclos de clock por microssegundo (50 MHz -> 50)
 ) (
