@@ -11,10 +11,10 @@ module input_controller #(
     output wire power_off_pulse, // Pulso de 1 ciclo no instante em que o sistema desliga (avisa LCD)
     output wire mem_reset_base   // 1 quando desligado ou reiniciando (zera os 16 registradores)
 );
-
+    // sincronizador com flip-flops
     reg key0_meta = 1'b1, key0_in = 1'b1;
     reg key1_meta = 1'b1, key1_in = 1'b1;
-
+    
     always @(posedge clk) begin
         key0_meta <= key_ligar_raw;
         key0_in   <= key0_meta;
@@ -22,12 +22,13 @@ module input_controller #(
         key1_meta <= key_enviar_raw;
         key1_in   <= key1_meta;
     end
-
+    // debounce
     reg [19:0] cnt0 = 20'd0;
     reg [19:0] cnt1 = 20'd0;
     reg key0_stable = 1'b1, key0_prev = 1'b1;
     reg key1_stable = 1'b1, key1_prev = 1'b1;
-
+    
+    // filtro do ligar
     always @(posedge clk) begin
         // Debounce do Botão Ligar (KEY[0])
         if (key0_in == key0_stable) begin
@@ -42,7 +43,7 @@ module input_controller #(
         end
         key0_prev <= key0_stable;
 
-        // Debounce do Botão Enviar (KEY[1])
+        // filtro do enviar
         if (key1_in == key1_stable) begin
             cnt1 <= 20'd0;
         end else begin
@@ -56,10 +57,11 @@ module input_controller #(
         key1_prev <= key1_stable;
     end
 
+        // detector de soltura
     wire ligar_released  = (~key0_prev) & key0_stable;
     wire enviar_released = (~key1_prev) & key1_stable;
 
-    // Sistema inicia sempre DESLIGADO (0) ao gravar na placa
+    // sistema começa desligado
     initial begin
         system_on = 1'b0;
     end
@@ -70,14 +72,13 @@ module input_controller #(
         end
     end
 
-    // Bloqueia o envio se o sistema estiver desligado ou desligando neste ciclo
+    // só deixa o pulso passar se o sistema tiver ligado
     assign send_pulse      = system_on && (!ligar_released) && enviar_released;
 
-    // Pulsos auxiliares de 1 ciclo para facilitar o trabalho do LCD (Integrante 5)
+    // acende apaga
     assign power_on_pulse  = ligar_released && (!system_on);
     assign power_off_pulse = ligar_released && system_on;
-
-    // Mantém a RAM zerada enquanto desligado e no momento em que liga/desliga
+    
     assign mem_reset_base  = (!system_on) || ligar_released;
 
 endmodule
