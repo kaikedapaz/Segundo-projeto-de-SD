@@ -1,17 +1,3 @@
-// =============================================================================
-// tb_lcd_controller.v - testbench do lcd_controller com um modelo simples de LCD HD44780
-//
-// O modelo captura RS/DATA na DESCIDA de EN e confere:
-//   * RS/DATA estaveis >= 60 ns antes de EN subir, RW = 0
-//   * EN alto por >= 230 ns
-//   * intervalo entre comandos >= 37 us (1,52 ms depois de "limpar display";
-//     4,1 ms depois do 1o 0x30 da inicializacao)
-//   * primeiro 0x30 da inicializacao >= 15 ms depois de system_on subir
-// e reproduz o conteudo da DDRAM para comparar com as linhas esperadas.
-//
-// Usa temporizacao real (50 MHz): a simulacao cobre ~350 ms e pode levar alguns minutos.
-// Resultado: "PASSOU" ou "FALHOU" no console.
-// =============================================================================
 `timescale 1ns/1ps
 
 module tb_lcd_controller;
